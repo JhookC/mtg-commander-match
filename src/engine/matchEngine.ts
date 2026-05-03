@@ -1,6 +1,7 @@
 import { fetchRecommendations } from '../providers/edhrec'
 import { sources } from '../sources/registry'
 import type { MatchedCardGroup, NormalizedCard } from '../domain/card'
+import { toMatchKey } from '../domain/card'
 
 export interface MatchResult {
   groups: MatchedCardGroup[]
@@ -96,6 +97,73 @@ export async function findMatches(
     stockCount,
     sourcesUsed: sources.map((s) => s.name),
   }
+}
+
+export interface CardLookupResult {
+  /** null when nothing in stock for this card across all sources. */
+  group: MatchedCardGroup | null
+  sourcesUsed: string[]
+}
+
+/**
+ * Looks up a single card by name across all stock sources (no EDHrec involved).
+ * Used by the "Carta específica" search mode.
+ *
+ * Synergy/inclusion/etc fields on the returned MatchedCardGroup are zeroed —
+ * they are EDHrec-specific and don't apply to a direct card lookup, but the
+ * group shape is reused so MatchResults / MatchedCardItem render unchanged.
+ */
+export async function findCardInStock(
+  cardName: string,
+  signal?: AbortSignal,
+): Promise<CardLookupResult> {
+  const targetKey = toMatchKey(cardName)
+  const stockResults = await Promise.all(
+    sources.map((s) => s.fetchInStock(signal)),
+  )
+
+  const variants: NormalizedCard[] = []
+  for (const result of stockResults) {
+    for (const card of result) {
+      if (card.matchKey === targetKey) variants.push(card)
+    }
+  }
+
+  const sourcesUsed = sources.map((s) => s.name)
+
+  if (variants.length === 0) {
+    return { group: null, sourcesUsed }
+  }
+
+  const deduped = collapseVariants(variants)
+  const sorted = deduped.sort((a, b) => a.price - b.price)
+  const cheapest = sorted[0]!
+  const totalStock = sorted.reduce((sum, v) => sum + v.stock, 0)
+  const sourceSet = new Set<string>()
+  for (const v of sorted) sourceSet.add(v.sourceName)
+
+  const group: MatchedCardGroup = {
+    matchKey: targetKey,
+    displayName: cheapest.displayName,
+    category: 'lookup',
+    categoryHeader: 'Resultado',
+    synergy: 0,
+    inclusion: 0,
+    numDecks: 0,
+    potentialDecks: 0,
+    inclusionRate: 0,
+    isHighSynergy: false,
+    isTopCard: false,
+    isGameChanger: false,
+    variants: sorted,
+    primaryVariant: cheapest,
+    minPrice: cheapest.price,
+    totalStock,
+    currency: cheapest.currency,
+    availableSources: Array.from(sourceSet),
+  }
+
+  return { group, sourcesUsed }
 }
 
 /**

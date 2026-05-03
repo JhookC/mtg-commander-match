@@ -62,6 +62,84 @@ export async function searchCommanders(
   }))
 }
 
+export interface CardSuggestion {
+  name: string
+  artUrl: string | null
+}
+
+export interface CardDetails {
+  name: string
+  imageUrl: string | null
+  artCropUrl: string | null
+  typeLine: string
+  manaCost: string | null
+  oracleText: string | null
+}
+
+/**
+ * Resolves a single card by exact name to its display details.
+ * Used by the "Carta específica" mode to show the card image even when out of stock.
+ */
+export async function resolveCard(
+  name: string,
+  signal?: AbortSignal,
+): Promise<CardDetails> {
+  const url = `${SCRYFALL_BASE}/cards/named?exact=${encodeURIComponent(name)}`
+  const res = await fetch(url, { signal })
+  if (!res.ok) throw new Error(`Scryfall resolve failed: ${res.status}`)
+  const c = (await res.json()) as ScryfallCard
+  const imageUrl =
+    c.image_uris?.normal ?? c.card_faces?.[0]?.image_uris?.normal ?? null
+  const artCropUrl = pickArtCrop(c)
+  const front = c.card_faces?.[0]
+  const manaCost = c.mana_cost ?? front?.mana_cost ?? null
+  const oracleText = c.oracle_text ?? front?.oracle_text ?? null
+  return {
+    name: c.name,
+    imageUrl,
+    artCropUrl,
+    typeLine: c.type_line,
+    manaCost: manaCost && manaCost.length > 0 ? manaCost : null,
+    oracleText: oracleText && oracleText.length > 0 ? oracleText : null,
+  }
+}
+
+/**
+ * Generic card name autocomplete (any card, not commander-restricted).
+ * Used by the "Carta específica" search mode.
+ */
+export async function searchCards(
+  query: string,
+  signal?: AbortSignal,
+): Promise<CardSuggestion[]> {
+  const trimmed = query.trim()
+  if (trimmed.length < 2) return []
+  const url = `${SCRYFALL_BASE}/cards/search?q=${encodeURIComponent(trimmed)}&unique=cards&order=edhrec`
+  const res = await fetch(url, { signal })
+  if (res.status === 404) return []
+  if (!res.ok) throw new Error(`Scryfall search failed: ${res.status}`)
+  const data = (await res.json()) as ScryfallList<ScryfallCard>
+  return data.data.slice(0, 20).map((c) => ({
+    name: c.name,
+    artUrl: pickArtCrop(c),
+  }))
+}
+
+/**
+ * Resolves a single card by Scryfall UUID and returns its normal image URL.
+ * Used by TokenPanel to lazily load token images.
+ */
+export async function resolveCardImageById(
+  id: string,
+  signal?: AbortSignal,
+): Promise<string | null> {
+  const url = `${SCRYFALL_BASE}/cards/${encodeURIComponent(id)}`
+  const res = await fetch(url, { signal })
+  if (!res.ok) return null
+  const c = (await res.json()) as ScryfallCard
+  return c.image_uris?.normal ?? c.card_faces?.[0]?.image_uris?.normal ?? null
+}
+
 export async function resolveCommander(
   name: string,
   signal?: AbortSignal,

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="6" fill="#1a0b2e"/>
+
+  <!-- Wizard hat: cone -->
+  <path d="M 16 4 L 22 22 L 10 22 Z" fill="#5b21b6" stroke="#7c3aed" stroke-width="0.4" stroke-linejoin="round"/>
+
+  <!-- Hat brim -->
+  <ellipse cx="16" cy="22" rx="9" ry="2" fill="#3b1466"/>
+  <ellipse cx="16" cy="22" rx="9" ry="2" fill="none" stroke="#7c3aed" stroke-width="0.4"/>
+
+  <!-- Hat band -->
+  <path d="M 12.3 16 L 19.7 16 L 19 18 L 13 18 Z" fill="#fbbf24"/>
+
+  <!-- Tip bend -->
+  <circle cx="16" cy="4.5" r="0.9" fill="#fbbf24"/>
+
+  <!-- Star on hat -->
+  <path d="M 16 11 L 16.7 12.6 L 18.3 12.7 L 17.1 13.8 L 17.5 15.4 L 16 14.5 L 14.5 15.4 L 14.9 13.8 L 13.7 12.7 L 15.3 12.6 Z" fill="#fde68a"/>
+
+  <!-- Sparkle dots -->
+  <circle cx="6" cy="9" r="0.8" fill="#fde68a"/>
+  <circle cx="26" cy="11" r="0.6" fill="#fde68a"/>
+  <circle cx="25" cy="6" r="0.5" fill="#fbbf24"/>
+  <circle cx="7" cy="15" r="0.5" fill="#fbbf24"/>
+</svg>

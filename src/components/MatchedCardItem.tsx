@@ -8,6 +8,11 @@ import { variantId } from '../domain/wishlist'
 
 interface Props {
   group: MatchedCardGroup
+  /**
+   * When set, displays an "En tu colección" chip with this quantity.
+   * Used by the card-lookup mode to indicate the card is already owned.
+   */
+  collectionQuantity?: number
 }
 
 interface WishlistToggleProps {
@@ -44,28 +49,29 @@ function WishlistToggle({ variant, size, fullWidth }: WishlistToggleProps) {
   )
 }
 
-export function MatchedCardItem({ group }: Props) {
+export function MatchedCardItem({ group, collectionQuantity }: Props) {
   const primary = group.primaryVariant
   const hasMultiple = group.variants.length > 1
   const setPreview = useImagePreview()
+  const ownedCount = collectionQuantity ?? 0
   return (
     <Card className="overflow-hidden">
       {primary.imageUrl ? (
         <button
           type="button"
           onClick={() => setPreview(primary.imageUrl)}
-          className="block w-full cursor-zoom-in"
+          className="block w-full cursor-zoom-in p-2 pb-0"
           aria-label={`Ver ${group.displayName} en grande`}
         >
           <img
             src={primary.imageUrl}
             alt={group.displayName}
-            className="w-full aspect-[488/680] object-cover"
+            className="w-full aspect-[488/680] object-cover rounded-md"
             loading="lazy"
           />
         </button>
       ) : (
-        <div className="w-full aspect-[488/680] bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-xs text-zinc-500">
+        <div className="m-2 mb-0 aspect-[488/680] rounded-md bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-xs text-zinc-500">
           Sin imagen
         </div>
       )}
@@ -79,10 +85,15 @@ export function MatchedCardItem({ group }: Props) {
           )}
         </div>
         <div className="flex flex-wrap gap-1">
+          {ownedCount > 0 && (
+            <Chip color="success">En tu colección: {ownedCount}</Chip>
+          )}
           {group.isHighSynergy && <Chip color="accent">Alta sinergia</Chip>}
           {group.isTopCard && <Chip color="success">Carta clave</Chip>}
           {group.isGameChanger && <Chip color="warning">Decisiva</Chip>}
-          <Chip>{formatPercent(group.inclusionRate)} de los decks</Chip>
+          {group.inclusionRate > 0 && (
+            <Chip>{formatPercent(group.inclusionRate)} de los decks</Chip>
+          )}
         </div>
         <div className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
           <span aria-hidden>🏪</span>
