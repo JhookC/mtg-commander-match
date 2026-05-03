@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import type { NormalizedCard } from '../domain/card'
 import type { FetchProgress } from '../sources/CardSource'
 import { sources } from '../sources/registry'
+import { catalogProgressStore } from './catalog-progress'
 
 export interface AggregateProgress {
   loaded: number
@@ -34,12 +35,14 @@ export function useStockCatalogs(enabled: boolean) {
           loaded += bySource[k]!.loaded
           total += bySource[k]!.total
         }
-        setProgress({
+        const next: AggregateProgress = {
           loaded,
           total,
           ratio: total > 0 ? loaded / total : 0,
           bySource: { ...bySource },
-        })
+        }
+        setProgress(next)
+        catalogProgressStore.set(next)
       }
       emit()
       try {
@@ -56,6 +59,7 @@ export function useStockCatalogs(enabled: boolean) {
         return map
       } finally {
         setProgress(null)
+        catalogProgressStore.set(null)
       }
     },
     enabled,

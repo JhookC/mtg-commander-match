@@ -73,8 +73,12 @@ function App() {
       <header className="sticky top-0 z-30 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-6 py-3">
-            <h1 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-              MTG Commander Match
+            <h1 className="flex items-center">
+              <img
+                src="/logo.png"
+                alt="MTG Commander Match"
+                className="h-10 w-auto"
+              />
             </h1>
             <nav
               role="tablist"

@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useQueryClient } from '@tanstack/react-query'
 import type { NormalizedCard } from '../domain/card'
+import type { FetchProgress } from '../sources/CardSource'
 import {
   saveDracoInventory,
   clearDracoInventory,
@@ -9,6 +10,8 @@ import {
   type DracoInventory,
 } from '../sources/draco/DracoSource'
 import { DracoHelpModal } from './DracoHelpModal'
+import { catalogProgressStore } from '../lib/catalog-progress'
+import type { AggregateProgress } from '../lib/use-stock-catalogs'
 
 function formatCount(n: number): string {
   return n.toLocaleString('es-CO')
@@ -22,28 +25,52 @@ function formatDate(iso: string): string {
   })
 }
 
+function sourceStatusText(
+  count: number | undefined,
+  sourceProgress: FetchProgress | undefined,
+  isFetching: boolean,
+): string {
+  if (!isFetching) return count !== undefined ? `${formatCount(count)} cartas` : '—'
+  if (!sourceProgress || sourceProgress.loaded === 0) return 'Buscando...'
+  if (sourceProgress.loaded < sourceProgress.total)
+    return `${sourceProgress.loaded}/${sourceProgress.total} páginas`
+  return count !== undefined ? `${formatCount(count)} cartas` : 'Buscando...'
+}
+
 function SourceCount({
   label,
   count,
+  sourceProgress,
+  isFetching,
 }: {
   label: string
   count: number | undefined
+  sourceProgress: FetchProgress | undefined
+  isFetching: boolean
 }) {
+  const text = sourceStatusText(count, sourceProgress, isFetching)
+  const isLoading = isFetching && text.endsWith('...')
   return (
     <span className="flex items-center gap-1.5">
       <span className="font-medium text-zinc-700 dark:text-zinc-300">{label}:</span>
-      <span>
-        {count !== undefined ? `${formatCount(count)} cartas` : '—'}
-      </span>
+      <span className={isLoading ? 'animate-pulse' : undefined}>{text}</span>
     </span>
   )
 }
 
-function readCounts(
-  queryClient: ReturnType<typeof useQueryClient>,
-): { rohan: number | undefined; topcard: number | undefined } {
+function readCounts(queryClient: ReturnType<typeof useQueryClient>): {
+  rohan: number | undefined
+  topcard: number | undefined
+  kartenjager: number | undefined
+  thevault: number | undefined
+} {
   const map = queryClient.getQueryData<Map<string, NormalizedCard[]>>(['allStockCatalogs'])
-  return { rohan: map?.get('Rohan')?.length, topcard: map?.get('TopCard')?.length }
+  return {
+    rohan: map?.get('Rohan')?.length,
+    topcard: map?.get('TopCard')?.length,
+    kartenjager: map?.get('KartenJager')?.length,
+    thevault: map?.get('TheVault')?.length,
+  }
 }
 
 export function DracoImportBanner() {
@@ -53,9 +80,11 @@ export function DracoImportBanner() {
 
   const meta = useLiveQuery(() => getDracoMeta(), [])
 
-  // Subscribe to the TanStack cache directly — `enabled: false` in useQuery
-  // doesn't re-render on cache updates in v5. This does.
   const [liveCounts, setLiveCounts] = useState(() => readCounts(queryClient))
+  const [catalogProgress, setCatalogProgress] = useState<AggregateProgress | null>(
+    () => catalogProgressStore.get(),
+  )
+
   useEffect(() => {
     return queryClient.getQueryCache().subscribe((event) => {
       if (event.query.queryHash === '["allStockCatalogs"]') {
@@ -64,7 +93,21 @@ export function DracoImportBanner() {
     })
   }, [queryClient])
 
-  const { rohan: rohanCount, topcard: topcardCount } = liveCounts
+  useEffect(() => {
+    return catalogProgressStore.subscribe(() => {
+      setCatalogProgress(catalogProgressStore.get())
+    })
+  }, [])
+
+  const isFetching = catalogProgress !== null
+  const bySource = catalogProgress?.bySource
+
+  const {
+    rohan: rohanCount,
+    topcard: topcardCount,
+    kartenjager: kartenJagerCount,
+    thevault: theVaultCount,
+  } = liveCounts
 
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: ['allStockCatalogs'] })
@@ -97,8 +140,30 @@ export function DracoImportBanner() {
   return (
     <>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400">
-        <SourceCount label="Rohan" count={rohanCount} />
-        <SourceCount label="TopCard" count={topcardCount} />
+        <SourceCount
+          label="Rohan"
+          count={rohanCount}
+          sourceProgress={bySource?.['Rohan']}
+          isFetching={isFetching}
+        />
+        <SourceCount
+          label="TopCard"
+          count={topcardCount}
+          sourceProgress={bySource?.['TopCard']}
+          isFetching={isFetching}
+        />
+        <SourceCount
+          label="KartenJager"
+          count={kartenJagerCount}
+          sourceProgress={bySource?.['KartenJager']}
+          isFetching={isFetching}
+        />
+        <SourceCount
+          label="TheVault"
+          count={theVaultCount}
+          sourceProgress={bySource?.['TheVault']}
+          isFetching={isFetching}
+        />
 
         {/* Draco — importable source with inline actions */}
         <span className="flex items-center gap-1.5">
