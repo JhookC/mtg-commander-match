@@ -20,7 +20,7 @@ interface Props {
   onInputChange: (v: string) => void
 }
 
-export function CardSearch({ onSelect, selectedName, prefixSlot, inputValue, onInputChange }: Props) {
+export function CardSearch({ onSelect, selectedName: _selectedName, prefixSlot, inputValue, onInputChange }: Props) {
   const [debounced, setDebounced] = useState(inputValue)
   const [open, setOpen] = useState(false)
 

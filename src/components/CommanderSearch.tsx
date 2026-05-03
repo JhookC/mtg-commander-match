@@ -11,7 +11,7 @@ interface Props {
   onInputChange: (v: string) => void
 }
 
-export function CommanderSearch({ onSelect, selectedName, prefixSlot, inputValue, onInputChange }: Props) {
+export function CommanderSearch({ onSelect, selectedName: _selectedName, prefixSlot, inputValue, onInputChange }: Props) {
   const [debounced, setDebounced] = useState(inputValue)
   const [open, setOpen] = useState(inputValue.length >= 2)
   const shouldAutoSelect = useRef(inputValue.length >= 2)
