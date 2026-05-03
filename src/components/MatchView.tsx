@@ -16,6 +16,7 @@ import { useState } from 'react'
 import { CommanderMatchView } from './CommanderMatchView'
 import { CardLookupView } from './CardLookupView'
 import { ModeSelectorPrefix, type ModeOption } from './ModeSelectorPrefix'
+import { DracoImportBanner } from './DracoImportBanner'
 
 type SearchMode = 'commander' | 'card'
 
@@ -39,6 +40,7 @@ export function MatchView() {
 
   return (
     <div className="flex flex-col gap-6 w-full">
+      <DracoImportBanner />
       {mode === 'commander' && (
         <CommanderMatchView
           prefixSlot={prefix}
