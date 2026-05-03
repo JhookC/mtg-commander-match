@@ -1,10 +1,47 @@
 import { Card, Chip } from '@heroui/react'
 import type { MatchedCardGroup } from '../domain/card'
+import type { NormalizedCard } from '../domain/card'
 import { formatPercent, formatPrice } from '../lib/format'
 import { useImagePreview } from '../lib/preview-context'
+import { useWishlist } from '../lib/wishlist-context'
+import { variantId } from '../domain/wishlist'
 
 interface Props {
   group: MatchedCardGroup
+}
+
+interface WishlistToggleProps {
+  variant: NormalizedCard
+  size: 'sm' | 'md'
+  fullWidth?: boolean
+}
+
+function WishlistToggle({ variant, size, fullWidth }: WishlistToggleProps) {
+  const { add, remove, has } = useWishlist()
+  const id = variantId(variant)
+  const inList = has(id)
+  const base =
+    size === 'sm'
+      ? 'h-7 px-2 text-xs'
+      : 'h-9 px-3 text-sm'
+  const widthCls = fullWidth ? 'w-full' : ''
+  const palette = inList
+    ? 'bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400'
+    : 'bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200'
+  return (
+    <button
+      type="button"
+      onClick={() => (inList ? remove(id) : add(variant))}
+      className={`cursor-pointer rounded-md font-medium transition-colors flex items-center justify-center gap-1 ${base} ${widthCls} ${palette}`}
+      aria-pressed={inList}
+      aria-label={
+        inList ? 'Quitar de la lista' : 'Agregar a la lista'
+      }
+    >
+      <span aria-hidden>{inList ? '✓' : '+'}</span>
+      <span>{inList ? 'En la lista' : 'Agregar'}</span>
+    </button>
+  )
 }
 
 export function MatchedCardItem({ group }: Props) {
@@ -60,6 +97,7 @@ export function MatchedCardItem({ group }: Props) {
             {group.totalStock} disponibles
           </span>
         </div>
+        <WishlistToggle variant={primary} size="md" fullWidth />
         {hasMultiple && (
           <details className="text-xs group">
             <summary className="cursor-pointer select-none text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 list-none flex items-center gap-1 [&::-webkit-details-marker]:hidden">
@@ -97,9 +135,12 @@ export function MatchedCardItem({ group }: Props) {
                       {v.sourceName} · {v.finish} · {v.condition}
                     </span>
                   </div>
-                  <span className="font-medium tabular-nums text-zinc-700 dark:text-zinc-300 flex-shrink-0">
-                    {formatPrice(v.price, v.currency)}
-                  </span>
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    <span className="font-medium tabular-nums text-zinc-700 dark:text-zinc-300">
+                      {formatPrice(v.price, v.currency)}
+                    </span>
+                    <WishlistToggle variant={v} size="sm" />
+                  </div>
                 </li>
               ))}
             </ul>

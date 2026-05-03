@@ -4,6 +4,7 @@ import { Spinner } from '@heroui/react'
 import { CommanderSearch } from './components/CommanderSearch'
 import { CommanderHeader } from './components/CommanderHeader'
 import { MatchResults } from './components/MatchResults'
+import { Wishlist } from './components/Wishlist'
 import { resolveCommander } from './providers/scryfall'
 import { findMatches } from './engine/matchEngine'
 
@@ -72,6 +73,7 @@ function App() {
 
         {matchQuery.data && <MatchResults result={matchQuery.data} />}
       </div>
+      <Wishlist />
     </main>
   )
 }

@@ -18,6 +18,8 @@ export interface NormalizedCard {
   sourceName: string
   /** Stable id within the source. */
   sourceId: string
+  /** Opaque source-specific payload used to rebuild a cart transfer. */
+  sourceMeta?: Record<string, unknown>
 }
 
 export interface MatchedCardGroup {
