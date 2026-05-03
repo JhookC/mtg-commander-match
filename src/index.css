@@ -1,0 +1,14 @@
+@import 'tailwindcss';
+@import '@heroui/styles';
+
+html,
+body,
+#root {
+  min-height: 100svh;
+  margin: 0;
+}
+
+body {
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
